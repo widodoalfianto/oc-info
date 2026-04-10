@@ -13,11 +13,18 @@ const EMPTY_CONTENT: SiteContentResponse = {
   careGroups: [],
 }
 
+const CACHE_TTL_MS = 60_000
+
 let cachedContent: SiteContentResponse | null = null
+let cachedAt = 0
 let inflightRequest: Promise<SiteContentResponse> | null = null
 
-async function fetchSiteContent() {
-  if (cachedContent) {
+function hasFreshCache() {
+  return Boolean(cachedContent) && Date.now() - cachedAt < CACHE_TTL_MS
+}
+
+async function fetchSiteContent(force = false) {
+  if (!force && hasFreshCache() && cachedContent) {
     return cachedContent
   }
 
@@ -33,6 +40,7 @@ async function fetchSiteContent() {
 
         const payload = (await response.json()) as SiteContentResponse
         cachedContent = payload
+        cachedAt = Date.now()
         return payload
       })
       .finally(() => {
@@ -48,13 +56,13 @@ export function useSiteContent() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(cachedContent ? 'ready' : 'loading')
 
   useEffect(() => {
-    if (cachedContent) {
+    if (hasFreshCache()) {
       return
     }
 
     let cancelled = false
 
-    fetchSiteContent()
+    fetchSiteContent(true)
       .then(payload => {
         if (cancelled) {
           return
@@ -68,7 +76,9 @@ export function useSiteContent() {
           return
         }
 
-        setStatus('error')
+        if (!cachedContent) {
+          setStatus('error')
+        }
       })
 
     return () => {

@@ -1,4 +1,5 @@
 const SHEETS = {
+  contacts: 'Contacts',
   ministryTeams: 'MinistryTeams',
   careGroups: 'CareGroups',
   ministryResponses: 'MinistryResponses',
@@ -22,8 +23,9 @@ const GUARDRAILS = {
 }
 
 const HEADERS = {
-  ministryTeams: ['name', 'leader', 'leaderEmail', 'schedule', 'location', 'active', 'sortOrder'],
-  careGroups: ['name', 'leader', 'leaderEmail', 'meets', 'location', 'active', 'sortOrder'],
+  contacts: ['key', 'name', 'email', 'active', 'sortOrder'],
+  ministryTeams: ['name', 'leaderKeys', 'leader', 'leaderEmail', 'schedule', 'location', 'active', 'sortOrder'],
+  careGroups: ['name', 'leaderKeys', 'leader', 'leaderEmail', 'meets', 'location', 'active', 'sortOrder'],
   ministryResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'ministryName'],
   careGroupResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'careGroupName'],
 }
@@ -36,36 +38,52 @@ const HEADER_ALIASES = {
 }
 
 const SEED_DATA = {
+  contacts: [
+    ['ari-adidarma', 'Ari Adidarma', '', 'TRUE', 1],
+    ['sangghara-kusumo', 'Sangghara Kusumo', '', 'TRUE', 2],
+    ['amadea-margo', 'Amadea Margo', '', 'TRUE', 3],
+    ['alfianto-widodo', 'Alfianto Widodo', '', 'TRUE', 4],
+    ['diana-taslim', 'Diana Taslim', '', 'TRUE', 5],
+    ['kimberly-lukman', 'Kimberly Lukman', '', 'TRUE', 6],
+    ['fira-soeharsono', 'Fira Soeharsono', '', 'TRUE', 7],
+    ['sheila-gandadjaya', 'Sheila Gandadjaya', '', 'TRUE', 8],
+    ['josh-thamrin', 'Josh Thamrin', '', 'TRUE', 9],
+    ['justin-darmawan', 'Justin Darmawan', '', 'TRUE', 10],
+  ],
   ministryTeams: [
-    ['Multimedia', 'Ari Adidarma', '', '', '', 'TRUE', 1],
-    ['Sound', 'Sangghara Kusumo', '', '', '', 'TRUE', 2],
-    ['Worship', 'Amadea Margo & Alfianto Widodo', '', '', '', 'TRUE', 3],
-    ['Hospitality', 'Diana Taslim', '', '', '', 'TRUE', 4],
-    ['Events & Social Media', 'Kimberly Lukman', '', '', '', 'TRUE', 5],
-    ['Youth', 'Fira Soeharsono', '', '', '', 'TRUE', 6],
-    ['Children', 'Sheila Gandadjaya', '', '', '', 'TRUE', 7],
+    ['Multimedia', 'ari-adidarma', 'Ari Adidarma', '', '', '', 'TRUE', 1],
+    ['Sound', 'sangghara-kusumo', 'Sangghara Kusumo', '', '', '', 'TRUE', 2],
+    ['Worship', 'amadea-margo,alfianto-widodo', 'Amadea Margo & Alfianto Widodo', '', '', '', 'TRUE', 3],
+    ['Hospitality', 'diana-taslim', 'Diana Taslim', '', '', '', 'TRUE', 4],
+    ['Events & Social Media', 'kimberly-lukman', 'Kimberly Lukman', '', '', '', 'TRUE', 5],
+    ['Youth', 'fira-soeharsono', 'Fira Soeharsono', '', '', '', 'TRUE', 6],
+    ['Children', 'sheila-gandadjaya', 'Sheila Gandadjaya', '', '', '', 'TRUE', 7],
   ],
   careGroups: [
-    ['Family', 'Fira Soeharsono', '', 'Sunday 2:30 PM', 'IFGF OC', 'TRUE', 1],
-    ['Young Professional', 'Josh Thamrin', '', 'Friday 7:30 PM', 'IFGF OC', 'TRUE', 2],
-    ['College', 'Justin Darmawan', '', 'Friday 7:30 PM', 'Rotating homes', 'TRUE', 3],
+    ['Family', 'fira-soeharsono', 'Fira Soeharsono', '', 'Sunday 2:30 PM', 'IFGF OC', 'TRUE', 1],
+    ['Young Professional', 'josh-thamrin', 'Josh Thamrin', '', 'Friday 7:30 PM', 'IFGF OC', 'TRUE', 2],
+    ['College', 'justin-darmawan', 'Justin Darmawan', '', 'Friday 7:30 PM', 'Rotating homes', 'TRUE', 3],
   ],
 }
 
 function setupIfgfOcSheets() {
+  ensureSheetSchema_(SHEETS.contacts, HEADERS.contacts)
   ensureSheetSchema_(SHEETS.ministryTeams, HEADERS.ministryTeams)
   ensureSheetSchema_(SHEETS.careGroups, HEADERS.careGroups)
   ensureSheetSchema_(SHEETS.ministryResponses, HEADERS.ministryResponses, HEADER_ALIASES.ministryResponses)
   ensureSheetSchema_(SHEETS.careGroupResponses, HEADERS.careGroupResponses, HEADER_ALIASES.careGroupResponses)
 
+  seedSheetIfEmpty_(SHEETS.contacts, SEED_DATA.contacts)
   seedSheetIfEmpty_(SHEETS.ministryTeams, SEED_DATA.ministryTeams)
   seedSheetIfEmpty_(SHEETS.careGroups, SEED_DATA.careGroups)
 }
 
 function doGet() {
+  const contactsByKey = getContactsByKey_()
+
   return jsonOutput_({
-    ministryTeams: getContentRows_(SHEETS.ministryTeams),
-    careGroups: getContentRows_(SHEETS.careGroups),
+    ministryTeams: getResolvedContentRows_(SHEETS.ministryTeams, contactsByKey),
+    careGroups: getResolvedContentRows_(SHEETS.careGroups, contactsByKey),
   })
 }
 
@@ -78,7 +96,8 @@ function doPost(e) {
     if (data.formType === 'care-group') {
       validateCareGroupSubmission_(data)
 
-      const careGroup = findContentRowByName_(SHEETS.careGroups, data.careGroupName)
+      const contactsByKey = getContactsByKey_()
+      const careGroup = findResolvedContentRowByName_(SHEETS.careGroups, data.careGroupName, contactsByKey)
 
       if (!careGroup) {
         throw new Error('Selected care group was not found in the spreadsheet.')
@@ -92,7 +111,8 @@ function doPost(e) {
     if (data.formType === 'ministry') {
       validateMinistrySubmission_(data)
 
-      const ministry = findContentRowByName_(SHEETS.ministryTeams, data.ministryName)
+      const contactsByKey = getContactsByKey_()
+      const ministry = findResolvedContentRowByName_(SHEETS.ministryTeams, data.ministryName, contactsByKey)
 
       if (!ministry) {
         throw new Error('Selected ministry was not found in the spreadsheet.')
@@ -305,6 +325,39 @@ function findContentRowByName_(sheetName, value) {
   return null
 }
 
+function findResolvedContentRowByName_(sheetName, value, contactsByKey) {
+  const row = findContentRowByName_(sheetName, value)
+
+  if (!row) {
+    return null
+  }
+
+  return resolveLeaderFields_(row, contactsByKey)
+}
+
+function getResolvedContentRows_(sheetName, contactsByKey) {
+  return getContentRows_(sheetName).map(function (row) {
+    return resolveLeaderFields_(row, contactsByKey)
+  })
+}
+
+function getContactsByKey_() {
+  const rows = getContentRows_(SHEETS.contacts)
+  const contactsByKey = {}
+
+  rows.forEach(function (row) {
+    const key = normalizeText_(row.key).toLowerCase()
+
+    if (!key) {
+      return
+    }
+
+    contactsByKey[key] = row
+  })
+
+  return contactsByKey
+}
+
 function sendLeaderNotification_(formType, target, data) {
   const recipients = parseRecipientList_(target.leaderEmail)
 
@@ -362,6 +415,82 @@ function parseRecipientList_(value) {
     .filter(function (item) {
       return item !== ''
     })
+}
+
+function parseLeaderKeys_(value) {
+  return normalizeText_(value)
+    .split(/[;,]/)
+    .map(function (item) {
+      return normalizeText_(item).toLowerCase()
+    })
+    .filter(function (item) {
+      return item !== ''
+    })
+}
+
+function resolveLeaderFields_(row, contactsByKey) {
+  const leaderKeys = parseLeaderKeys_(row.leaderKeys)
+  const resolvedContacts = leaderKeys
+    .map(function (key) {
+      return contactsByKey[key]
+    })
+    .filter(Boolean)
+
+  const leaderNames = resolvedContacts
+    .map(function (contact) {
+      return normalizeText_(contact.name)
+    })
+    .filter(Boolean)
+
+  const leaderEmails = dedupeValues_(
+    resolvedContacts
+      .map(function (contact) {
+        return normalizeText_(contact.email)
+      })
+      .filter(Boolean)
+  )
+
+  const fallbackLeader = normalizeText_(row.leader)
+  const fallbackLeaderEmail = normalizeText_(row.leaderEmail)
+
+  return Object.assign({}, row, {
+    leader: leaderNames.length ? formatDisplayNames_(leaderNames) : fallbackLeader,
+    leaderEmail: leaderEmails.length ? leaderEmails.join('; ') : fallbackLeaderEmail,
+  })
+}
+
+function dedupeValues_(values) {
+  const seen = {}
+  const deduped = []
+
+  values.forEach(function (value) {
+    const normalized = normalizeText_(value).toLowerCase()
+
+    if (!normalized || seen[normalized]) {
+      return
+    }
+
+    seen[normalized] = true
+    deduped.push(value)
+  })
+
+  return deduped
+}
+
+function formatDisplayNames_(names) {
+  if (names.length === 0) {
+    return ''
+  }
+
+  if (names.length === 1) {
+    return names[0]
+  }
+
+  if (names.length === 2) {
+    return names[0] + ' & ' + names[1]
+  }
+
+  return names.slice(0, names.length - 1).join(', ') + ' & ' + names[names.length - 1]
 }
 
 function buildNotificationRow_(label, value) {

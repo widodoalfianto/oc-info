@@ -87,20 +87,20 @@ export default function Calendar({ events }: CalendarProps) {
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500 hover:text-zinc-200"
+          className="text-2xl leading-none text-zinc-500 hover:text-zinc-200"
           aria-label="Previous month"
         >
-          Prev
+          ←
         </button>
         <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </h2>
         <button
           onClick={nextMonth}
-          className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500 hover:text-zinc-200"
+          className="text-2xl leading-none text-zinc-500 hover:text-zinc-200"
           aria-label="Next month"
         >
-          Next
+          →
         </button>
       </div>
 

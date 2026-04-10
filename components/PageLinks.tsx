@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const links = [
   { href: '/care-group', label: 'Care Group' },
@@ -7,14 +10,16 @@ const links = [
 ]
 
 interface PageLinksProps {
-  activePath?: string
+  className?: string
 }
 
-export default function PageLinks({ activePath }: PageLinksProps) {
+export default function PageLinks({ className }: PageLinksProps) {
+  const pathname = usePathname()
+
   return (
-    <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.28em]">
+    <nav className={`flex flex-wrap items-center justify-end gap-x-6 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.28em] ${className ?? ''}`}>
       {links.map(({ href, label }) => {
-        const isActive = activePath === href
+        const isActive = pathname === href
 
         return (
           <Link

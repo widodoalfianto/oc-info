@@ -232,12 +232,6 @@ export default function InterestForm({
       )}
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <div className="md:col-span-2">
-          <p className="text-sm leading-relaxed text-zinc-400">
-            Share an email address, a phone number, or both. We&apos;ll pass this straight to the right leader.
-          </p>
-        </div>
-
         <div className="hidden" aria-hidden="true">
           <label htmlFor="website" className="form-label">Website</label>
           <input

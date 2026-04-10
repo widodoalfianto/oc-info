@@ -36,7 +36,7 @@ export default function CareGroupSignupContent({
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)] xl:gap-14">
-      <aside>
+      <aside className="order-2 lg:order-1">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Care Groups</p>
 
         {isLoading ? (
@@ -74,7 +74,7 @@ export default function CareGroupSignupContent({
         )}
       </aside>
 
-      <section id="care-group-form" className="min-w-0">
+      <section id="care-group-form" className="order-1 min-w-0 lg:order-2">
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white md:text-4xl">Join a care group!</h1>
 
         <div className="mt-8">

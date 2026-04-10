@@ -83,21 +83,28 @@ The ministry and care group lists now support spreadsheet-driven content.
 
 Use one Google Spreadsheet with these sheets:
 
-1. `MinistryTeams`
-2. `CareGroups`
-3. `MinistryResponses`
-4. `CareGroupResponses`
+1. `Contacts`
+2. `MinistryTeams`
+3. `CareGroups`
+4. `MinistryResponses`
+5. `CareGroupResponses`
+
+### `Contacts` headers
+
+```text
+key | name | email | active | sortOrder
+```
 
 ### `MinistryTeams` headers
 
 ```text
-name | leader | leaderEmail | schedule | location | active | sortOrder
+name | leaderKeys | leader | leaderEmail | schedule | location | active | sortOrder
 ```
 
 ### `CareGroups` headers
 
 ```text
-name | leader | leaderEmail | meets | location | active | sortOrder
+name | leaderKeys | leader | leaderEmail | meets | location | active | sortOrder
 ```
 
 ### `MinistryResponses` headers
@@ -112,24 +119,39 @@ timestamp | name | email | phone | whatsAppConsent | ministryName
 timestamp | name | email | phone | whatsAppConsent | careGroupName
 ```
 
+### Seed rows for `Contacts`
+
+```text
+ari-adidarma | Ari Adidarma |  | TRUE | 1
+sangghara-kusumo | Sangghara Kusumo |  | TRUE | 2
+amadea-margo | Amadea Margo |  | TRUE | 3
+alfianto-widodo | Alfianto Widodo |  | TRUE | 4
+diana-taslim | Diana Taslim |  | TRUE | 5
+kimberly-lukman | Kimberly Lukman |  | TRUE | 6
+fira-soeharsono | Fira Soeharsono |  | TRUE | 7
+sheila-gandadjaya | Sheila Gandadjaya |  | TRUE | 8
+josh-thamrin | Josh Thamrin |  | TRUE | 9
+justin-darmawan | Justin Darmawan |  | TRUE | 10
+```
+
 ### Seed rows for `MinistryTeams`
 
 ```text
-Multimedia | Ari Adidarma |  |  |  | TRUE | 1
-Sound | Sangghara Kusumo |  |  |  | TRUE | 2
-Worship | Amadea Margo & Alfianto Widodo |  |  |  | TRUE | 3
-Hospitality | Diana Taslim |  |  |  | TRUE | 4
-Events & Social Media | Kimberly Lukman |  |  |  | TRUE | 5
-Youth | Fira Soeharsono |  |  |  | TRUE | 6
-Children | Sheila Gandadjaya |  |  |  | TRUE | 7
+Multimedia | ari-adidarma | Ari Adidarma |  |  |  | TRUE | 1
+Sound | sangghara-kusumo | Sangghara Kusumo |  |  |  | TRUE | 2
+Worship | amadea-margo,alfianto-widodo | Amadea Margo & Alfianto Widodo |  |  |  | TRUE | 3
+Hospitality | diana-taslim | Diana Taslim |  |  |  | TRUE | 4
+Events & Social Media | kimberly-lukman | Kimberly Lukman |  |  |  | TRUE | 5
+Youth | fira-soeharsono | Fira Soeharsono |  |  |  | TRUE | 6
+Children | sheila-gandadjaya | Sheila Gandadjaya |  |  |  | TRUE | 7
 ```
 
 ### Seed rows for `CareGroups`
 
 ```text
-Family | Fira Soeharsono |  | Sunday 2:30 PM | IFGF OC | TRUE | 1
-Young Professional | Josh Thamrin |  | Friday 7:30 PM | IFGF OC | TRUE | 2
-College | Justin Darmawan |  | Friday 7:30 PM | Rotating homes | TRUE | 3
+Family | fira-soeharsono | Fira Soeharsono |  | Sunday 2:30 PM | IFGF OC | TRUE | 1
+Young Professional | josh-thamrin | Josh Thamrin |  | Friday 7:30 PM | IFGF OC | TRUE | 2
+College | justin-darmawan | Justin Darmawan |  | Friday 7:30 PM | Rotating homes | TRUE | 3
 ```
 
 ## Apps Script Setup
@@ -144,6 +166,7 @@ High-level steps:
 4. In the Apps Script editor, run `setupIfgfOcSheets()` once.
 5. Authorize the script when prompted.
 6. Confirm the spreadsheet now contains:
+   - `Contacts`
    - `MinistryTeams`
    - `CareGroups`
    - `MinistryResponses`
@@ -169,13 +192,14 @@ This gives you one spreadsheet and one Apps Script deployment for:
 
 ### Leader notifications
 
-Leader notifications are driven by the `leaderEmail` column on the `MinistryTeams` and `CareGroups` sheets.
+Leader notifications can now be managed from the `Contacts` sheet.
 
-- Add one email address to notify one leader.
-- Separate multiple emails with commas or semicolons if a team has co-leaders.
-- Leave `leaderEmail` blank if you do not want automatic notifications yet.
+- Put each leader in `Contacts` with a stable `key`, display `name`, and `email`.
+- In `MinistryTeams` and `CareGroups`, set `leaderKeys` to one or more contact keys separated by commas.
+- The app resolves leader names for display and leader emails for notifications from `Contacts`.
+- The older `leader` and `leaderEmail` columns are still supported as fallback values, so existing sheets will keep working while you migrate.
 
-When a built-in care group or ministry form is submitted, Apps Script writes the row into the response sheet and emails the matching leader immediately.
+When a built-in care group or ministry form is submitted, Apps Script writes the row into the response sheet and emails the resolved leader email addresses immediately.
 
 ## Guard Rails
 
