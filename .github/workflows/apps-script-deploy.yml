@@ -1,0 +1,90 @@
+name: Apps Script CI/CD
+
+on:
+  pull_request:
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/apps-script-deploy.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/apps-script-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  validate-apps-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Apps Script manifest
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('apps-script/appsscript.json', 'utf8'))"
+
+      - name: Ensure main Apps Script source exists
+        run: test -f apps-script/ifgf-oc-content-and-forms.gs
+
+  deploy-apps-script:
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: validate-apps-script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install --global @google/clasp
+
+      - name: Write clasp credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.GOOGLE_APPS_SCRIPT_CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "Missing GOOGLE_APPS_SCRIPT_CLASPRC_JSON secret"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+
+      - name: Write clasp project config
+        env:
+          SCRIPT_ID: ${{ secrets.GOOGLE_APPS_SCRIPT_SCRIPT_ID }}
+        run: |
+          if [ -z "$SCRIPT_ID" ]; then
+            echo "Missing GOOGLE_APPS_SCRIPT_SCRIPT_ID secret"
+            exit 1
+          fi
+          cat > .clasp.json <<EOF
+          {
+            "scriptId": "$SCRIPT_ID",
+            "rootDir": "apps-script"
+          }
+          EOF
+
+      - name: Push Apps Script files
+        run: clasp push --force
+
+      - name: Create a version snapshot
+        run: clasp version "GitHub Actions ${GITHUB_SHA}"
+
+      - name: Redeploy existing web app deployment
+        if: ${{ secrets.GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID != '' }}
+        env:
+          DEPLOYMENT_ID: ${{ secrets.GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID }}
+        run: |
+          VERSION_NUMBER="$(clasp --json versions | node -e 'const fs=require("fs"); const versions=JSON.parse(fs.readFileSync(0,"utf8")); console.log(versions[versions.length - 1].versionNumber)')"
+          clasp redeploy "$DEPLOYMENT_ID" "$VERSION_NUMBER" "GitHub Actions ${GITHUB_SHA}"

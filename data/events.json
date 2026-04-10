@@ -1,0 +1,92 @@
+[
+  {
+    "id": "1",
+    "title": "Sunday Worship",
+    "date": "2026-04-06",
+    "time": "10:00 AM",
+    "location": "Main Sanctuary",
+    "description": "Join us for our weekly Sunday worship service.",
+    "category": "worship"
+  },
+  {
+    "id": "2",
+    "title": "Care Group — Couples",
+    "date": "2026-04-08",
+    "time": "7:00 PM",
+    "location": "Room 101",
+    "description": "Couples care group meeting. All welcome!",
+    "category": "care-group"
+  },
+  {
+    "id": "3",
+    "title": "Youth Night",
+    "date": "2026-04-11",
+    "time": "6:30 PM",
+    "location": "Youth Hall",
+    "description": "A fun evening for teens and young adults.",
+    "category": "youth"
+  },
+  {
+    "id": "4",
+    "title": "Sunday Worship",
+    "date": "2026-04-13",
+    "time": "10:00 AM",
+    "location": "Main Sanctuary",
+    "description": "Join us for our weekly Sunday worship service.",
+    "category": "worship"
+  },
+  {
+    "id": "5",
+    "title": "Worship Team Rehearsal",
+    "date": "2026-04-15",
+    "time": "7:00 PM",
+    "location": "Sanctuary",
+    "description": "Weekly rehearsal for the worship ministry team.",
+    "category": "ministry"
+  },
+  {
+    "id": "6",
+    "title": "Community Outreach",
+    "date": "2026-04-19",
+    "time": "9:00 AM",
+    "location": "Church Parking Lot",
+    "description": "Monthly outreach — food distribution and prayer.",
+    "category": "outreach"
+  },
+  {
+    "id": "7",
+    "title": "Sunday Worship",
+    "date": "2026-04-20",
+    "time": "10:00 AM",
+    "location": "Main Sanctuary",
+    "description": "Join us for our weekly Sunday worship service.",
+    "category": "worship"
+  },
+  {
+    "id": "8",
+    "title": "Prayer Meeting",
+    "date": "2026-04-22",
+    "time": "6:00 AM",
+    "location": "Prayer Room",
+    "description": "Early morning corporate prayer. All are welcome.",
+    "category": "prayer"
+  },
+  {
+    "id": "9",
+    "title": "Sunday Worship",
+    "date": "2026-04-27",
+    "time": "10:00 AM",
+    "location": "Main Sanctuary",
+    "description": "Join us for our weekly Sunday worship service.",
+    "category": "worship"
+  },
+  {
+    "id": "10",
+    "title": "Leaders' Meeting",
+    "date": "2026-04-28",
+    "time": "7:30 PM",
+    "location": "Conference Room",
+    "description": "Monthly meeting for all ministry and care group leaders.",
+    "category": "ministry"
+  }
+]

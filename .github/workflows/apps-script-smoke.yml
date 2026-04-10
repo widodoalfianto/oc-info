@@ -1,0 +1,39 @@
+name: Apps Script Smoke Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_post_tests:
+        description: 'Also run submission POST smoke tests'
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: '0 15 * * *'
+
+jobs:
+  apps-script-smoke:
+    runs-on: ubuntu-latest
+    env:
+      SITE_CONTENT_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_WEB_APP_URL }}
+      NEXT_PUBLIC_CARE_GROUP_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_WEB_APP_URL }}
+      NEXT_PUBLIC_MINISTRY_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_WEB_APP_URL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Apps Script runtime configuration
+        run: npm run validate:apps-script
+
+      - name: Smoke test content endpoint
+        run: npm run test:apps-script:get
+
+      - name: Smoke test submission endpoints
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_post_tests }}
+        run: npm run test:apps-script:post
