@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Apps Script CI/CD
 
 on:
@@ -82,9 +83,12 @@ jobs:
         run: clasp version "GitHub Actions ${GITHUB_SHA}"
 
       - name: Redeploy existing web app deployment
-        if: ${{ secrets.GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID != '' }}
         env:
           DEPLOYMENT_ID: ${{ secrets.GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID }}
         run: |
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "No GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID set, skipping redeploy"
+            exit 0
+          fi
           VERSION_NUMBER="$(clasp --json versions | node -e 'const fs=require("fs"); const versions=JSON.parse(fs.readFileSync(0,"utf8")); console.log(versions[versions.length - 1].versionNumber)')"
           clasp redeploy "$DEPLOYMENT_ID" "$VERSION_NUMBER" "GitHub Actions ${GITHUB_SHA}"
