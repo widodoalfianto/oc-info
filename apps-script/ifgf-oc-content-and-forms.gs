@@ -24,26 +24,23 @@ const GUARDRAILS = {
 
 const FORMULAS = {
   contactKeyColumn:
-    '=ARRAYFORMULA(IF(B2:B="","",LOWER(REGEXREPLACE(SUBSTITUTE(TRIM(B2:B)," ","-"),"[^a-z0-9-]",""))))',
+    '=ARRAYFORMULA(IF(B2:B="","",LOWER(REGEXREPLACE(SUBSTITUTE(TRIM(B2:B)," ","-"),"[^A-Za-z0-9-]",""))))',
 }
 
 const HEADERS = {
   contacts: ['key', 'name', 'email'],
-  ministryTeams: ['name', 'leader', 'leaderKeys'],
-  careGroups: ['name', 'leader', 'meets', 'location', 'leaderKeys'],
+  ministryTeams: ['name', 'leader'],
+  careGroups: ['name', 'leader', 'meets', 'location'],
   ministryResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'ministryName'],
   careGroupResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'careGroupName'],
 }
 
 const HEADER_ALIASES = {
   contacts: {},
-  ministryTeams: {
-    leaderKeys: ['leaderKey'],
-  },
+  ministryTeams: {},
   careGroups: {
     meets: ['when'],
     location: ['meets'],
-    leaderKeys: ['leaderKey'],
   },
   ministryResponses: {
     ministryName: ['ministryArea'],
@@ -89,13 +86,8 @@ function setupIfgfOcSheets() {
 
   seedSheetIfEmpty_(SHEETS.contacts, buildContactSeedRows_())
   syncContactKeyFormula_()
-
-  const contactsByName = buildSeedContactsByName_()
-
-  seedSheetIfEmpty_(SHEETS.ministryTeams, buildMinistrySeedRows_(contactsByName))
-  seedSheetIfEmpty_(SHEETS.careGroups, buildCareGroupSeedRows_(contactsByName))
-
-  syncLeaderKeys_()
+  seedSheetIfEmpty_(SHEETS.ministryTeams, buildMinistrySeedRows_())
+  seedSheetIfEmpty_(SHEETS.careGroups, buildCareGroupSeedRows_())
   applyLeaderDropdownValidations_()
 }
 
@@ -108,13 +100,7 @@ function onEdit(e) {
 
   if (sheetName === SHEETS.contacts) {
     syncContactKeyFormula_()
-    syncLeaderKeys_()
     applyLeaderDropdownValidations_()
-    return
-  }
-
-  if (sheetName === SHEETS.ministryTeams || sheetName === SHEETS.careGroups) {
-    syncLeaderKeys_()
   }
 }
 
@@ -124,12 +110,11 @@ function onOpen() {
 }
 
 function doGet() {
-  const contactsByKey = getContactsByKey_()
   const contactsByName = getContactsByName_()
 
   return jsonOutput_({
-    ministryTeams: getResolvedContentRows_(SHEETS.ministryTeams, contactsByKey, contactsByName),
-    careGroups: getResolvedContentRows_(SHEETS.careGroups, contactsByKey, contactsByName),
+    ministryTeams: getResolvedContentRows_(SHEETS.ministryTeams, contactsByName),
+    careGroups: getResolvedContentRows_(SHEETS.careGroups, contactsByName),
   })
 }
 
@@ -142,9 +127,8 @@ function doPost(e) {
     if (data.formType === 'care-group') {
       validateCareGroupSubmission_(data)
 
-      const contactsByKey = getContactsByKey_()
       const contactsByName = getContactsByName_()
-      const careGroup = findResolvedContentRowByName_(SHEETS.careGroups, data.careGroupName, contactsByKey, contactsByName)
+      const careGroup = findResolvedContentRowByName_(SHEETS.careGroups, data.careGroupName, contactsByName)
 
       if (!careGroup) {
         throw new Error('Selected care group was not found in the spreadsheet.')
@@ -158,9 +142,8 @@ function doPost(e) {
     if (data.formType === 'ministry') {
       validateMinistrySubmission_(data)
 
-      const contactsByKey = getContactsByKey_()
       const contactsByName = getContactsByName_()
-      const ministry = findResolvedContentRowByName_(SHEETS.ministryTeams, data.ministryName, contactsByKey, contactsByName)
+      const ministry = findResolvedContentRowByName_(SHEETS.ministryTeams, data.ministryName, contactsByName)
 
       if (!ministry) {
         throw new Error('Selected ministry was not found in the spreadsheet.')
@@ -345,90 +328,21 @@ function getColumnIndex_(sheet, headerName) {
   return index === -1 ? 0 : index + 1
 }
 
-function syncLeaderKeys_() {
-  if (!getOptionalSheet_(SHEETS.contacts)) {
-    return
-  }
-
-  const contactsByName = getContactsByName_()
-  syncLeaderKeysForSheet_(SHEETS.ministryTeams, contactsByName)
-  syncLeaderKeysForSheet_(SHEETS.careGroups, contactsByName)
-}
-
-function syncLeaderKeysForSheet_(sheetName, contactsByName) {
-  const sheet = getOptionalSheet_(sheetName)
-
-  if (!sheet) {
-    return
-  }
-
-  const values = sheet.getDataRange().getDisplayValues()
-
-  if (values.length <= 1) {
-    return
-  }
-
-  const headers = values[0].map(normalizeText_)
-  const leaderIndex = headers.indexOf('leader')
-  const leaderKeysIndex = headers.indexOf('leaderKeys')
-
-  if (leaderIndex === -1 || leaderKeysIndex === -1) {
-    return
-  }
-
-  const rows = values.slice(1)
-  const leaderKeyValues = rows.map(function (row) {
-    return [generateLeaderKeysFromLeaderValue_(row[leaderIndex], contactsByName)]
-  })
-
-  sheet.getRange(2, leaderKeysIndex + 1, leaderKeyValues.length, 1).setValues(leaderKeyValues)
-}
-
 function buildContactSeedRows_() {
   return SEED_DATA.contacts.map(function (contact) {
     return ['', contact.name, contact.email]
   })
 }
 
-function buildSeedContactsByName_() {
-  const contactsByName = {}
-
-  SEED_DATA.contacts.forEach(function (contact) {
-    const name = normalizeText_(contact.name).toLowerCase()
-
-    if (!name) {
-      return
-    }
-
-    contactsByName[name] = {
-      key: normalizeText_(contact.key),
-      name: normalizeText_(contact.name),
-      email: normalizeText_(contact.email),
-    }
-  })
-
-  return contactsByName
-}
-
-function buildMinistrySeedRows_(contactsByName) {
+function buildMinistrySeedRows_() {
   return SEED_DATA.ministryTeams.map(function (team) {
-    return [
-      team.name,
-      team.leader,
-      generateLeaderKeysFromLeaderValue_(team.leader, contactsByName),
-    ]
+    return [team.name, team.leader]
   })
 }
 
-function buildCareGroupSeedRows_(contactsByName) {
+function buildCareGroupSeedRows_() {
   return SEED_DATA.careGroups.map(function (group) {
-    return [
-      group.name,
-      group.leader,
-      group.meets,
-      group.location,
-      generateLeaderKeysFromLeaderValue_(group.leader, contactsByName),
-    ]
+    return [group.name, group.leader, group.meets, group.location]
   })
 }
 
@@ -514,37 +428,20 @@ function findContentRowByName_(sheetName, value) {
   return null
 }
 
-function findResolvedContentRowByName_(sheetName, value, contactsByKey, contactsByName) {
+function findResolvedContentRowByName_(sheetName, value, contactsByName) {
   const row = findContentRowByName_(sheetName, value)
 
   if (!row) {
     return null
   }
 
-  return resolveLeaderFields_(row, contactsByKey, contactsByName)
+  return resolveLeaderFields_(row, contactsByName)
 }
 
-function getResolvedContentRows_(sheetName, contactsByKey, contactsByName) {
+function getResolvedContentRows_(sheetName, contactsByName) {
   return getContentRows_(sheetName).map(function (row) {
-    return resolveLeaderFields_(row, contactsByKey, contactsByName)
+    return resolveLeaderFields_(row, contactsByName)
   })
-}
-
-function getContactsByKey_() {
-  const rows = getContentRows_(SHEETS.contacts)
-  const contactsByKey = {}
-
-  rows.forEach(function (row) {
-    const key = normalizeContactKey_(row).toLowerCase()
-
-    if (!key) {
-      return
-    }
-
-    contactsByKey[key] = Object.assign({}, row, { key: key })
-  })
-
-  return contactsByKey
 }
 
 function getContactsByName_() {
@@ -623,17 +520,6 @@ function parseRecipientList_(value) {
     })
 }
 
-function parseLeaderKeys_(value) {
-  return normalizeText_(value)
-    .split(/[;,]/)
-    .map(function (item) {
-      return normalizeText_(item).toLowerCase()
-    })
-    .filter(function (item) {
-      return item !== ''
-    })
-}
-
 function parseLeaderNames_(value) {
   return normalizeText_(value)
     .replace(/\s*&\s*/g, ',')
@@ -645,20 +531,6 @@ function parseLeaderNames_(value) {
     .filter(function (item) {
       return item !== ''
     })
-}
-
-function generateLeaderKeysFromLeaderValue_(value, contactsByName) {
-  const leaderNames = parseLeaderNames_(value)
-  const keys = leaderNames
-    .map(function (name) {
-      const contact = contactsByName[normalizeText_(name).toLowerCase()]
-      return contact ? normalizeText_(contact.key).toLowerCase() : ''
-    })
-    .filter(function (key) {
-      return key !== ''
-    })
-
-  return dedupeValues_(keys).join(',')
 }
 
 function normalizeContactKey_(row) {
@@ -678,8 +550,8 @@ function slugifyContactName_(value) {
     .replace(/[^a-z0-9-]/g, '')
 }
 
-function resolveLeaderFields_(row, contactsByKey, contactsByName) {
-  const resolvedContacts = resolveContactsForRow_(row, contactsByKey, contactsByName)
+function resolveLeaderFields_(row, contactsByName) {
+  const resolvedContacts = resolveContactsForRow_(row, contactsByName)
   const leaderNames = resolvedContacts
     .map(function (contact) {
       return normalizeText_(contact.name)
@@ -696,22 +568,14 @@ function resolveLeaderFields_(row, contactsByKey, contactsByName) {
 
   const fallbackLeader = normalizeText_(row.leader)
   const fallbackLeaderEmail = normalizeText_(row.leaderEmail)
-  const fallbackLeaderKeys = normalizeText_(row.leaderKeys)
 
   return Object.assign({}, row, {
     leader: leaderNames.length ? formatDisplayNames_(leaderNames) : fallbackLeader,
     leaderEmail: leaderEmails.length ? leaderEmails.join('; ') : fallbackLeaderEmail,
-    leaderKeys: resolvedContacts.length
-      ? resolvedContacts
-          .map(function (contact) {
-            return normalizeText_(contact.key).toLowerCase()
-          })
-          .join(',')
-      : fallbackLeaderKeys,
   })
 }
 
-function resolveContactsForRow_(row, contactsByKey, contactsByName) {
+function resolveContactsForRow_(row, contactsByName) {
   const contactsFromNames = parseLeaderNames_(row.leader)
     .map(function (name) {
       return contactsByName[normalizeText_(name).toLowerCase()]
@@ -722,13 +586,7 @@ function resolveContactsForRow_(row, contactsByKey, contactsByName) {
     return dedupeContacts_(contactsFromNames)
   }
 
-  const contactsFromKeys = parseLeaderKeys_(row.leaderKeys)
-    .map(function (key) {
-      return contactsByKey[key]
-    })
-    .filter(Boolean)
-
-  return dedupeContacts_(contactsFromKeys)
+  return []
 }
 
 function dedupeContacts_(contacts) {
@@ -962,7 +820,6 @@ function migrateCareGroupRow_(row, existingHeaders) {
     normalizeText_(record.leader),
     hasWhenColumn ? normalizeText_(record.when) : normalizeText_(record.meets),
     hasWhenColumn ? normalizeText_(record.meets) : normalizeText_(record.location),
-    normalizeText_(record.leaderKeys || record.leaderKey),
   ]
 }
 

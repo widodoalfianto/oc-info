@@ -100,13 +100,13 @@ key | name | email
 ### `MinistryTeams` headers
 
 ```text
-name | leader | leaderKeys
+name | leader
 ```
 
 ### `CareGroups` headers
 
 ```text
-name | leader | meets | location | leaderKeys
+name | leader | meets | location
 ```
 
 ### `MinistryResponses` headers
@@ -139,21 +139,21 @@ timestamp | name | email | phone | whatsAppConsent | careGroupName
 ### Seed rows for `MinistryTeams`
 
 ```text
-Multimedia | Ari Adidarma | ari-adidarma
-Sound | Sangghara Kusumo | sangghara-kusumo
-Worship | Amadea Margo & Alfianto Widodo | amadea-margo,alfianto-widodo
-Hospitality | Diana Taslim | diana-taslim
-Events & Social Media | Kimberly Lukman | kimberly-lukman
-Youth | Fira Soeharsono | fira-soeharsono
-Children | Sheila Gandadjaya | sheila-gandadjaya
+Multimedia | Ari Adidarma
+Sound | Sangghara Kusumo
+Worship | Amadea Margo & Alfianto Widodo
+Hospitality | Diana Taslim
+Events & Social Media | Kimberly Lukman
+Youth | Fira Soeharsono
+Children | Sheila Gandadjaya
 ```
 
 ### Seed rows for `CareGroups`
 
 ```text
-Family | Fira Soeharsono | Sunday 2:30 PM | IFGF OC | fira-soeharsono
-Young Professional | Josh Thamrin | Friday 7:30 PM | IFGF OC | josh-thamrin
-College | Justin Darmawan | Friday 7:30 PM | Rotating homes | justin-darmawan
+Family | Fira Soeharsono | Sunday 2:30 PM | IFGF OC
+Young Professional | Josh Thamrin | Friday 7:30 PM | IFGF OC
+College | Justin Darmawan | Friday 7:30 PM | Rotating homes
 ```
 
 ## Apps Script Setup
@@ -200,7 +200,7 @@ Leader notifications can now be managed from the `Contacts` sheet.
 - Put each leader in `Contacts` with a display `name` and `email`.
 - `Contacts.key` is generated automatically from the contact name formula.
 - In `MinistryTeams` and `CareGroups`, use the `leader` column for human-readable names.
-- The `leader` cells get a dropdown sourced from `Contacts`, and Apps Script keeps the rightmost `leaderKeys` column in sync automatically.
+- The `leader` cells get a dropdown sourced from `Contacts`.
 - The app resolves leader names for display and leader emails for notifications from `Contacts`.
 - For multiple leaders, separate names with commas or `&`.
 
