@@ -20,19 +20,6 @@ function normalizeText(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function isEnabled(value: unknown) {
-  const normalized = normalizeText(value).toLowerCase()
-  return normalized !== 'false' && normalized !== 'no' && normalized !== '0'
-}
-
-function sortItems<T extends UnknownRecord>(items: T[]) {
-  return [...items].sort((left, right) => {
-    const leftOrder = Number(left.sortOrder ?? left.order ?? Number.MAX_SAFE_INTEGER)
-    const rightOrder = Number(right.sortOrder ?? right.order ?? Number.MAX_SAFE_INTEGER)
-    return leftOrder - rightOrder
-  })
-}
-
 function normalizeMinistryTeams(input: unknown): MinistryTeam[] {
   if (!Array.isArray(input)) {
     return fallbackMinistryTeams
@@ -40,15 +27,9 @@ function normalizeMinistryTeams(input: unknown): MinistryTeam[] {
 
   const teams = input
     .filter((item): item is UnknownRecord => Boolean(item) && typeof item === 'object')
-    .filter(item => isEnabled(item.active))
     .map(item => ({
       name: normalizeText(item.name),
       leader: normalizeText(item.leader),
-      leaderEmail: normalizeText(item.leaderEmail),
-      schedule: normalizeText(item.schedule),
-      location: normalizeText(item.location),
-      sortOrder: item.sortOrder,
-      order: item.order,
     }))
     .filter(item => item.name && item.leader)
 
@@ -56,13 +37,7 @@ function normalizeMinistryTeams(input: unknown): MinistryTeam[] {
     return fallbackMinistryTeams
   }
 
-  return sortItems(teams).map(({ name, leader, leaderEmail, schedule, location }) => ({
-    name,
-    leader,
-    leaderEmail,
-    schedule,
-    location,
-  }))
+  return teams
 }
 
 function normalizeCareGroups(input: unknown): CareGroup[] {
@@ -72,29 +47,23 @@ function normalizeCareGroups(input: unknown): CareGroup[] {
 
   const groups = input
     .filter((item): item is UnknownRecord => Boolean(item) && typeof item === 'object')
-    .filter(item => isEnabled(item.active))
-    .map(item => ({
-      name: normalizeText(item.name),
-      leader: normalizeText(item.leader),
-      leaderEmail: normalizeText(item.leaderEmail),
-      meets: normalizeText(item.meets),
-      location: normalizeText(item.location),
-      sortOrder: item.sortOrder,
-      order: item.order,
-    }))
-    .filter(item => item.name && item.leader && item.meets)
+    .map(item => {
+      const explicitLocation = normalizeText(item.location)
+
+      return {
+        name: normalizeText(item.name),
+        leader: normalizeText(item.leader),
+        meets: explicitLocation ? normalizeText(item.meets) : normalizeText(item.when),
+        location: explicitLocation || normalizeText(item.meets),
+      }
+    })
+    .filter(item => item.name && item.leader && item.meets && item.location)
 
   if (groups.length === 0) {
     return fallbackCareGroups
   }
 
-  return sortItems(groups).map(({ name, leader, leaderEmail, meets, location }) => ({
-    name,
-    leader,
-    leaderEmail,
-    meets,
-    location,
-  }))
+  return groups
 }
 
 function normalizeResponse(input: unknown): SiteContentResponse {

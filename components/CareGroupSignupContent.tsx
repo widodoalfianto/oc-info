@@ -15,9 +15,9 @@ function CareGroupListSkeleton() {
         <div key={index} className="border-b border-white/10 py-4 last:border-b-0">
           <div className="h-4 w-32 animate-pulse bg-white/6" />
           <div className="mt-3 space-y-2">
-            <div className="h-3 w-40 animate-pulse bg-white/6" />
             <div className="h-3 w-32 animate-pulse bg-white/6" />
             <div className="h-3 w-36 animate-pulse bg-white/6" />
+            <div className="h-3 w-28 animate-pulse bg-white/6" />
           </div>
         </div>
       ))}
@@ -51,12 +51,10 @@ export default function CareGroupSignupContent({
                     <dt className="inline text-zinc-600">When: </dt>
                     <dd className="inline">{group.meets}</dd>
                   </div>
-                  {group.location && (
-                    <div>
-                      <dt className="inline text-zinc-600">Where: </dt>
-                      <dd className="inline">{group.location}</dd>
-                    </div>
-                  )}
+                  <div>
+                    <dt className="inline text-zinc-600">Where: </dt>
+                    <dd className="inline">{group.location}</dd>
+                  </div>
                   <div>
                     <dt className="inline text-zinc-600">Leader: </dt>
                     <dd className="inline">{group.leader}</dd>

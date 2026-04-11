@@ -92,19 +92,21 @@ Use one Google Spreadsheet with these sheets:
 ### `Contacts` headers
 
 ```text
-key | name | email | active | sortOrder
+key | name | email
 ```
+
+`key` is auto-generated from `name` by the Apps Script setup formula, so your team mainly edits `name` and `email`.
 
 ### `MinistryTeams` headers
 
 ```text
-name | leaderKeys | leader | leaderEmail | schedule | location | active | sortOrder
+name | leader | leaderKeys
 ```
 
 ### `CareGroups` headers
 
 ```text
-name | leaderKeys | leader | leaderEmail | meets | location | active | sortOrder
+name | leader | meets | location | leaderKeys
 ```
 
 ### `MinistryResponses` headers
@@ -122,36 +124,36 @@ timestamp | name | email | phone | whatsAppConsent | careGroupName
 ### Seed rows for `Contacts`
 
 ```text
-ari-adidarma | Ari Adidarma |  | TRUE | 1
-sangghara-kusumo | Sangghara Kusumo |  | TRUE | 2
-amadea-margo | Amadea Margo |  | TRUE | 3
-alfianto-widodo | Alfianto Widodo |  | TRUE | 4
-diana-taslim | Diana Taslim |  | TRUE | 5
-kimberly-lukman | Kimberly Lukman |  | TRUE | 6
-fira-soeharsono | Fira Soeharsono |  | TRUE | 7
-sheila-gandadjaya | Sheila Gandadjaya |  | TRUE | 8
-josh-thamrin | Josh Thamrin |  | TRUE | 9
-justin-darmawan | Justin Darmawan |  | TRUE | 10
+ | Ari Adidarma |
+ | Sangghara Kusumo |
+ | Amadea Margo |
+ | Alfianto Widodo |
+ | Diana Taslim |
+ | Kimberly Lukman |
+ | Fira Soeharsono |
+ | Sheila Gandadjaya |
+ | Josh Thamrin |
+ | Justin Darmawan |
 ```
 
 ### Seed rows for `MinistryTeams`
 
 ```text
-Multimedia | ari-adidarma | Ari Adidarma |  |  |  | TRUE | 1
-Sound | sangghara-kusumo | Sangghara Kusumo |  |  |  | TRUE | 2
-Worship | amadea-margo,alfianto-widodo | Amadea Margo & Alfianto Widodo |  |  |  | TRUE | 3
-Hospitality | diana-taslim | Diana Taslim |  |  |  | TRUE | 4
-Events & Social Media | kimberly-lukman | Kimberly Lukman |  |  |  | TRUE | 5
-Youth | fira-soeharsono | Fira Soeharsono |  |  |  | TRUE | 6
-Children | sheila-gandadjaya | Sheila Gandadjaya |  |  |  | TRUE | 7
+Multimedia | Ari Adidarma | ari-adidarma
+Sound | Sangghara Kusumo | sangghara-kusumo
+Worship | Amadea Margo & Alfianto Widodo | amadea-margo,alfianto-widodo
+Hospitality | Diana Taslim | diana-taslim
+Events & Social Media | Kimberly Lukman | kimberly-lukman
+Youth | Fira Soeharsono | fira-soeharsono
+Children | Sheila Gandadjaya | sheila-gandadjaya
 ```
 
 ### Seed rows for `CareGroups`
 
 ```text
-Family | fira-soeharsono | Fira Soeharsono |  | Sunday 2:30 PM | IFGF OC | TRUE | 1
-Young Professional | josh-thamrin | Josh Thamrin |  | Friday 7:30 PM | IFGF OC | TRUE | 2
-College | justin-darmawan | Justin Darmawan |  | Friday 7:30 PM | Rotating homes | TRUE | 3
+Family | Fira Soeharsono | Sunday 2:30 PM | IFGF OC | fira-soeharsono
+Young Professional | Josh Thamrin | Friday 7:30 PM | IFGF OC | josh-thamrin
+College | Justin Darmawan | Friday 7:30 PM | Rotating homes | justin-darmawan
 ```
 
 ## Apps Script Setup
@@ -166,17 +168,18 @@ High-level steps:
 4. In the Apps Script editor, run `setupIfgfOcSheets()` once.
 5. Authorize the script when prompted.
 6. Confirm the spreadsheet now contains:
-   - `Contacts`
-   - `MinistryTeams`
-   - `CareGroups`
-   - `MinistryResponses`
-   - `CareGroupResponses`
-7. Click `Deploy -> New deployment`.
-8. Choose `Web app`.
-9. Set `Execute as` to `Me`.
-10. Set `Who has access` to `Anyone`.
-11. Copy the deployed `/exec` URL.
-12. Put that same URL into:
+- `Contacts`
+- `MinistryTeams`
+- `CareGroups`
+- `MinistryResponses`
+- `CareGroupResponses`
+7. Confirm `Contacts.key` auto-fills from the `name` column.
+8. Click `Deploy -> New deployment`.
+9. Choose `Web app`.
+10. Set `Execute as` to `Me`.
+11. Set `Who has access` to `Anyone`.
+12. Copy the deployed `/exec` URL.
+13. Put that same URL into:
    - `SITE_CONTENT_SCRIPT_URL`
    - `NEXT_PUBLIC_CARE_GROUP_SCRIPT_URL`
    - `NEXT_PUBLIC_MINISTRY_SCRIPT_URL`
@@ -194,10 +197,12 @@ This gives you one spreadsheet and one Apps Script deployment for:
 
 Leader notifications can now be managed from the `Contacts` sheet.
 
-- Put each leader in `Contacts` with a stable `key`, display `name`, and `email`.
-- In `MinistryTeams` and `CareGroups`, set `leaderKeys` to one or more contact keys separated by commas.
+- Put each leader in `Contacts` with a display `name` and `email`.
+- `Contacts.key` is generated automatically from the contact name formula.
+- In `MinistryTeams` and `CareGroups`, use the `leader` column for human-readable names.
+- The `leader` cells get a dropdown sourced from `Contacts`, and Apps Script keeps the rightmost `leaderKeys` column in sync automatically.
 - The app resolves leader names for display and leader emails for notifications from `Contacts`.
-- The older `leader` and `leaderEmail` columns are still supported as fallback values, so existing sheets will keep working while you migrate.
+- For multiple leaders, separate names with commas or `&`.
 
 When a built-in care group or ministry form is submitted, Apps Script writes the row into the response sheet and emails the resolved leader email addresses immediately.
 
@@ -322,7 +327,7 @@ npm run test:apps-script:all
 ```
 
 The POST smoke test writes test rows into your Google Sheets response tabs with an `AUTOMATED_TEST_...` marker.
-If `leaderEmail` is filled in for the matching care group or ministry, the POST smoke test will also trigger a real notification email.
+If the matching leader has an email in `Contacts`, the POST smoke test will also trigger a real notification email.
 
 ### GitHub Actions smoke workflow
 

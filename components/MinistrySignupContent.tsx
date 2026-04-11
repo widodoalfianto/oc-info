@@ -14,10 +14,7 @@ function MinistryListSkeleton() {
       {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="border-b border-white/10 py-4 last:border-b-0">
           <div className="h-4 w-32 animate-pulse bg-white/6" />
-          <div className="mt-3 space-y-2">
-            <div className="h-3 w-36 animate-pulse bg-white/6" />
-            <div className="h-3 w-28 animate-pulse bg-white/6" />
-          </div>
+          <div className="mt-3 h-3 w-36 animate-pulse bg-white/6" />
         </div>
       ))}
     </div>
@@ -50,18 +47,6 @@ export default function MinistrySignupContent({
                     <dt className="inline text-zinc-600">Leader: </dt>
                     <dd className="inline">{ministry.leader}</dd>
                   </div>
-                  {ministry.schedule && (
-                    <div>
-                      <dt className="inline text-zinc-600">When: </dt>
-                      <dd className="inline">{ministry.schedule}</dd>
-                    </div>
-                  )}
-                  {ministry.location && (
-                    <div>
-                      <dt className="inline text-zinc-600">Where: </dt>
-                      <dd className="inline">{ministry.location}</dd>
-                    </div>
-                  )}
                 </dl>
               </article>
             ))}

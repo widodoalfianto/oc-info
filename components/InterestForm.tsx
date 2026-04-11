@@ -142,7 +142,7 @@ export default function InterestForm({
 
     if (!hasOptions) {
       setStatus('error')
-      setErrorMessage('No active options are available yet. Add them to the spreadsheet first.')
+      setErrorMessage('No options are available yet. Add them to the spreadsheet first.')
       return
     }
 
@@ -226,8 +226,8 @@ export default function InterestForm({
 
       {!optionsLoading && !hasOptions && (
         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-amber-200">
-          No active {formType === 'care-group' ? 'care groups' : 'ministries'} are available yet. Add rows to the
-          spreadsheet and make sure they are marked active.
+          No {formType === 'care-group' ? 'care groups' : 'ministries'} are available yet. Add rows to the
+          spreadsheet first.
         </p>
       )}
 

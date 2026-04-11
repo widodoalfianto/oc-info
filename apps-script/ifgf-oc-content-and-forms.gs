@@ -22,15 +22,29 @@ const GUARDRAILS = {
   dedupeWindowSeconds: 15 * 60,
 }
 
+const FORMULAS = {
+  contactKeyColumn:
+    '=ARRAYFORMULA(IF(B2:B="","",LOWER(REGEXREPLACE(SUBSTITUTE(TRIM(B2:B)," ","-"),"[^a-z0-9-]",""))))',
+}
+
 const HEADERS = {
-  contacts: ['key', 'name', 'email', 'active', 'sortOrder'],
-  ministryTeams: ['name', 'leaderKeys', 'leader', 'leaderEmail', 'schedule', 'location', 'active', 'sortOrder'],
-  careGroups: ['name', 'leaderKeys', 'leader', 'leaderEmail', 'meets', 'location', 'active', 'sortOrder'],
+  contacts: ['key', 'name', 'email'],
+  ministryTeams: ['name', 'leader', 'leaderKeys'],
+  careGroups: ['name', 'leader', 'meets', 'location', 'leaderKeys'],
   ministryResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'ministryName'],
   careGroupResponses: ['timestamp', 'name', 'email', 'phone', 'whatsAppConsent', 'careGroupName'],
 }
 
 const HEADER_ALIASES = {
+  contacts: {},
+  ministryTeams: {
+    leaderKeys: ['leaderKey'],
+  },
+  careGroups: {
+    meets: ['when'],
+    location: ['meets'],
+    leaderKeys: ['leaderKey'],
+  },
   ministryResponses: {
     ministryName: ['ministryArea'],
   },
@@ -39,51 +53,83 @@ const HEADER_ALIASES = {
 
 const SEED_DATA = {
   contacts: [
-    ['ari-adidarma', 'Ari Adidarma', '', 'TRUE', 1],
-    ['sangghara-kusumo', 'Sangghara Kusumo', '', 'TRUE', 2],
-    ['amadea-margo', 'Amadea Margo', '', 'TRUE', 3],
-    ['alfianto-widodo', 'Alfianto Widodo', '', 'TRUE', 4],
-    ['diana-taslim', 'Diana Taslim', '', 'TRUE', 5],
-    ['kimberly-lukman', 'Kimberly Lukman', '', 'TRUE', 6],
-    ['fira-soeharsono', 'Fira Soeharsono', '', 'TRUE', 7],
-    ['sheila-gandadjaya', 'Sheila Gandadjaya', '', 'TRUE', 8],
-    ['josh-thamrin', 'Josh Thamrin', '', 'TRUE', 9],
-    ['justin-darmawan', 'Justin Darmawan', '', 'TRUE', 10],
+    { key: 'ari-adidarma', name: 'Ari Adidarma', email: '' },
+    { key: 'sangghara-kusumo', name: 'Sangghara Kusumo', email: '' },
+    { key: 'amadea-margo', name: 'Amadea Margo', email: '' },
+    { key: 'alfianto-widodo', name: 'Alfianto Widodo', email: '' },
+    { key: 'diana-taslim', name: 'Diana Taslim', email: '' },
+    { key: 'kimberly-lukman', name: 'Kimberly Lukman', email: '' },
+    { key: 'fira-soeharsono', name: 'Fira Soeharsono', email: '' },
+    { key: 'sheila-gandadjaya', name: 'Sheila Gandadjaya', email: '' },
+    { key: 'josh-thamrin', name: 'Josh Thamrin', email: '' },
+    { key: 'justin-darmawan', name: 'Justin Darmawan', email: '' },
   ],
   ministryTeams: [
-    ['Multimedia', 'ari-adidarma', 'Ari Adidarma', '', '', '', 'TRUE', 1],
-    ['Sound', 'sangghara-kusumo', 'Sangghara Kusumo', '', '', '', 'TRUE', 2],
-    ['Worship', 'amadea-margo,alfianto-widodo', 'Amadea Margo & Alfianto Widodo', '', '', '', 'TRUE', 3],
-    ['Hospitality', 'diana-taslim', 'Diana Taslim', '', '', '', 'TRUE', 4],
-    ['Events & Social Media', 'kimberly-lukman', 'Kimberly Lukman', '', '', '', 'TRUE', 5],
-    ['Youth', 'fira-soeharsono', 'Fira Soeharsono', '', '', '', 'TRUE', 6],
-    ['Children', 'sheila-gandadjaya', 'Sheila Gandadjaya', '', '', '', 'TRUE', 7],
+    { name: 'Multimedia', leader: 'Ari Adidarma' },
+    { name: 'Sound', leader: 'Sangghara Kusumo' },
+    { name: 'Worship', leader: 'Amadea Margo & Alfianto Widodo' },
+    { name: 'Hospitality', leader: 'Diana Taslim' },
+    { name: 'Events & Social Media', leader: 'Kimberly Lukman' },
+    { name: 'Youth', leader: 'Fira Soeharsono' },
+    { name: 'Children', leader: 'Sheila Gandadjaya' },
   ],
   careGroups: [
-    ['Family', 'fira-soeharsono', 'Fira Soeharsono', '', 'Sunday 2:30 PM', 'IFGF OC', 'TRUE', 1],
-    ['Young Professional', 'josh-thamrin', 'Josh Thamrin', '', 'Friday 7:30 PM', 'IFGF OC', 'TRUE', 2],
-    ['College', 'justin-darmawan', 'Justin Darmawan', '', 'Friday 7:30 PM', 'Rotating homes', 'TRUE', 3],
+    { name: 'Family', leader: 'Fira Soeharsono', meets: 'Sunday 2:30 PM', location: 'IFGF OC' },
+    { name: 'Young Professional', leader: 'Josh Thamrin', meets: 'Friday 7:30 PM', location: 'IFGF OC' },
+    { name: 'College', leader: 'Justin Darmawan', meets: 'Friday 7:30 PM', location: 'Rotating homes' },
   ],
 }
 
 function setupIfgfOcSheets() {
-  ensureSheetSchema_(SHEETS.contacts, HEADERS.contacts)
-  ensureSheetSchema_(SHEETS.ministryTeams, HEADERS.ministryTeams)
-  ensureSheetSchema_(SHEETS.careGroups, HEADERS.careGroups)
+  ensureSheetSchema_(SHEETS.contacts, HEADERS.contacts, HEADER_ALIASES.contacts)
+  ensureSheetSchema_(SHEETS.ministryTeams, HEADERS.ministryTeams, HEADER_ALIASES.ministryTeams)
+  ensureSheetSchema_(SHEETS.careGroups, HEADERS.careGroups, HEADER_ALIASES.careGroups)
   ensureSheetSchema_(SHEETS.ministryResponses, HEADERS.ministryResponses, HEADER_ALIASES.ministryResponses)
   ensureSheetSchema_(SHEETS.careGroupResponses, HEADERS.careGroupResponses, HEADER_ALIASES.careGroupResponses)
 
-  seedSheetIfEmpty_(SHEETS.contacts, SEED_DATA.contacts)
-  seedSheetIfEmpty_(SHEETS.ministryTeams, SEED_DATA.ministryTeams)
-  seedSheetIfEmpty_(SHEETS.careGroups, SEED_DATA.careGroups)
+  seedSheetIfEmpty_(SHEETS.contacts, buildContactSeedRows_())
+  syncContactKeyFormula_()
+
+  const contactsByName = buildSeedContactsByName_()
+
+  seedSheetIfEmpty_(SHEETS.ministryTeams, buildMinistrySeedRows_(contactsByName))
+  seedSheetIfEmpty_(SHEETS.careGroups, buildCareGroupSeedRows_(contactsByName))
+
+  syncLeaderKeys_()
+  applyLeaderDropdownValidations_()
+}
+
+function onEdit(e) {
+  if (!e || !e.range) {
+    return
+  }
+
+  const sheetName = e.range.getSheet().getName()
+
+  if (sheetName === SHEETS.contacts) {
+    syncContactKeyFormula_()
+    syncLeaderKeys_()
+    applyLeaderDropdownValidations_()
+    return
+  }
+
+  if (sheetName === SHEETS.ministryTeams || sheetName === SHEETS.careGroups) {
+    syncLeaderKeys_()
+  }
+}
+
+function onOpen() {
+  syncContactKeyFormula_()
+  applyLeaderDropdownValidations_()
 }
 
 function doGet() {
   const contactsByKey = getContactsByKey_()
+  const contactsByName = getContactsByName_()
 
   return jsonOutput_({
-    ministryTeams: getResolvedContentRows_(SHEETS.ministryTeams, contactsByKey),
-    careGroups: getResolvedContentRows_(SHEETS.careGroups, contactsByKey),
+    ministryTeams: getResolvedContentRows_(SHEETS.ministryTeams, contactsByKey, contactsByName),
+    careGroups: getResolvedContentRows_(SHEETS.careGroups, contactsByKey, contactsByName),
   })
 }
 
@@ -97,7 +143,8 @@ function doPost(e) {
       validateCareGroupSubmission_(data)
 
       const contactsByKey = getContactsByKey_()
-      const careGroup = findResolvedContentRowByName_(SHEETS.careGroups, data.careGroupName, contactsByKey)
+      const contactsByName = getContactsByName_()
+      const careGroup = findResolvedContentRowByName_(SHEETS.careGroups, data.careGroupName, contactsByKey, contactsByName)
 
       if (!careGroup) {
         throw new Error('Selected care group was not found in the spreadsheet.')
@@ -112,7 +159,8 @@ function doPost(e) {
       validateMinistrySubmission_(data)
 
       const contactsByKey = getContactsByKey_()
-      const ministry = findResolvedContentRowByName_(SHEETS.ministryTeams, data.ministryName, contactsByKey)
+      const contactsByName = getContactsByName_()
+      const ministry = findResolvedContentRowByName_(SHEETS.ministryTeams, data.ministryName, contactsByKey, contactsByName)
 
       if (!ministry) {
         throw new Error('Selected ministry was not found in the spreadsheet.')
@@ -179,23 +227,20 @@ function getContentRows_(sheetName) {
         return record
       }, {})
     })
-    .filter(function (row) {
-      const active = String(row.active || 'TRUE').toLowerCase()
-      return active !== 'false' && active !== 'no' && active !== '0'
-    })
-    .sort(function (left, right) {
-      return Number(left.sortOrder || 999) - Number(right.sortOrder || 999)
-    })
 }
 
 function getSheet_(sheetName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
+  const sheet = getOptionalSheet_(sheetName)
 
   if (!sheet) {
     throw new Error('Missing sheet: ' + sheetName)
   }
 
   return sheet
+}
+
+function getOptionalSheet_(sheetName) {
+  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
 }
 
 function ensureSheetSchema_(sheetName, headers, aliases) {
@@ -226,6 +271,10 @@ function ensureSheetSchema_(sheetName, headers, aliases) {
   })
 
   const migratedRows = existingRows.map(function (row) {
+    if (sheetName === SHEETS.careGroups) {
+      return migrateCareGroupRow_(row, existingHeaders)
+    }
+
     return migrateRow_(row, existingHeaders, headers, aliases || {})
   })
 
@@ -241,6 +290,146 @@ function seedSheetIfEmpty_(sheetName, rows) {
   }
 
   sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows)
+}
+
+function applyLeaderDropdownValidations_() {
+  const contactsSheet = getOptionalSheet_(SHEETS.contacts)
+
+  if (!contactsSheet) {
+    return
+  }
+
+  const contactsLastRow = Math.max(contactsSheet.getLastRow(), 2)
+  const contactNameRange = contactsSheet.getRange(2, 2, Math.max(contactsLastRow - 1, 1), 1)
+  const validation = SpreadsheetApp.newDataValidation()
+    .requireValueInRange(contactNameRange, true)
+    .setAllowInvalid(true)
+    .setHelpText('Choose a contact name. For multiple leaders, separate names with commas.')
+    .build()
+
+  applyValidationToColumn_(SHEETS.ministryTeams, 'leader', validation)
+  applyValidationToColumn_(SHEETS.careGroups, 'leader', validation)
+}
+
+function syncContactKeyFormula_() {
+  const contactsSheet = getOptionalSheet_(SHEETS.contacts)
+
+  if (!contactsSheet) {
+    return
+  }
+
+  const maxRows = Math.max(contactsSheet.getMaxRows() - 1, 1)
+  contactsSheet.getRange(2, 1, maxRows, 1).clearContent()
+  contactsSheet.getRange(2, 1).setFormula(FORMULAS.contactKeyColumn)
+}
+
+function applyValidationToColumn_(sheetName, headerName, validation) {
+  const sheet = getOptionalSheet_(sheetName)
+
+  if (!sheet) {
+    return
+  }
+
+  const columnIndex = getColumnIndex_(sheet, headerName)
+
+  if (!columnIndex) {
+    return
+  }
+
+  sheet.getRange(2, columnIndex, Math.max(sheet.getMaxRows() - 1, 1), 1).setDataValidation(validation)
+}
+
+function getColumnIndex_(sheet, headerName) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(normalizeText_)
+  const index = headers.indexOf(headerName)
+  return index === -1 ? 0 : index + 1
+}
+
+function syncLeaderKeys_() {
+  if (!getOptionalSheet_(SHEETS.contacts)) {
+    return
+  }
+
+  const contactsByName = getContactsByName_()
+  syncLeaderKeysForSheet_(SHEETS.ministryTeams, contactsByName)
+  syncLeaderKeysForSheet_(SHEETS.careGroups, contactsByName)
+}
+
+function syncLeaderKeysForSheet_(sheetName, contactsByName) {
+  const sheet = getOptionalSheet_(sheetName)
+
+  if (!sheet) {
+    return
+  }
+
+  const values = sheet.getDataRange().getDisplayValues()
+
+  if (values.length <= 1) {
+    return
+  }
+
+  const headers = values[0].map(normalizeText_)
+  const leaderIndex = headers.indexOf('leader')
+  const leaderKeysIndex = headers.indexOf('leaderKeys')
+
+  if (leaderIndex === -1 || leaderKeysIndex === -1) {
+    return
+  }
+
+  const rows = values.slice(1)
+  const leaderKeyValues = rows.map(function (row) {
+    return [generateLeaderKeysFromLeaderValue_(row[leaderIndex], contactsByName)]
+  })
+
+  sheet.getRange(2, leaderKeysIndex + 1, leaderKeyValues.length, 1).setValues(leaderKeyValues)
+}
+
+function buildContactSeedRows_() {
+  return SEED_DATA.contacts.map(function (contact) {
+    return ['', contact.name, contact.email]
+  })
+}
+
+function buildSeedContactsByName_() {
+  const contactsByName = {}
+
+  SEED_DATA.contacts.forEach(function (contact) {
+    const name = normalizeText_(contact.name).toLowerCase()
+
+    if (!name) {
+      return
+    }
+
+    contactsByName[name] = {
+      key: normalizeText_(contact.key),
+      name: normalizeText_(contact.name),
+      email: normalizeText_(contact.email),
+    }
+  })
+
+  return contactsByName
+}
+
+function buildMinistrySeedRows_(contactsByName) {
+  return SEED_DATA.ministryTeams.map(function (team) {
+    return [
+      team.name,
+      team.leader,
+      generateLeaderKeysFromLeaderValue_(team.leader, contactsByName),
+    ]
+  })
+}
+
+function buildCareGroupSeedRows_(contactsByName) {
+  return SEED_DATA.careGroups.map(function (group) {
+    return [
+      group.name,
+      group.leader,
+      group.meets,
+      group.location,
+      generateLeaderKeysFromLeaderValue_(group.leader, contactsByName),
+    ]
+  })
 }
 
 function jsonOutput_(payload) {
@@ -325,19 +514,19 @@ function findContentRowByName_(sheetName, value) {
   return null
 }
 
-function findResolvedContentRowByName_(sheetName, value, contactsByKey) {
+function findResolvedContentRowByName_(sheetName, value, contactsByKey, contactsByName) {
   const row = findContentRowByName_(sheetName, value)
 
   if (!row) {
     return null
   }
 
-  return resolveLeaderFields_(row, contactsByKey)
+  return resolveLeaderFields_(row, contactsByKey, contactsByName)
 }
 
-function getResolvedContentRows_(sheetName, contactsByKey) {
+function getResolvedContentRows_(sheetName, contactsByKey, contactsByName) {
   return getContentRows_(sheetName).map(function (row) {
-    return resolveLeaderFields_(row, contactsByKey)
+    return resolveLeaderFields_(row, contactsByKey, contactsByName)
   })
 }
 
@@ -346,16 +535,33 @@ function getContactsByKey_() {
   const contactsByKey = {}
 
   rows.forEach(function (row) {
-    const key = normalizeText_(row.key).toLowerCase()
+    const key = normalizeContactKey_(row).toLowerCase()
 
     if (!key) {
       return
     }
 
-    contactsByKey[key] = row
+    contactsByKey[key] = Object.assign({}, row, { key: key })
   })
 
   return contactsByKey
+}
+
+function getContactsByName_() {
+  const rows = getContentRows_(SHEETS.contacts)
+  const contactsByName = {}
+
+  rows.forEach(function (row) {
+    const name = normalizeText_(row.name).toLowerCase()
+
+    if (!name) {
+      return
+    }
+
+    contactsByName[name] = Object.assign({}, row, { key: normalizeContactKey_(row) })
+  })
+
+  return contactsByName
 }
 
 function sendLeaderNotification_(formType, target, data) {
@@ -428,14 +634,52 @@ function parseLeaderKeys_(value) {
     })
 }
 
-function resolveLeaderFields_(row, contactsByKey) {
-  const leaderKeys = parseLeaderKeys_(row.leaderKeys)
-  const resolvedContacts = leaderKeys
-    .map(function (key) {
-      return contactsByKey[key]
+function parseLeaderNames_(value) {
+  return normalizeText_(value)
+    .replace(/\s*&\s*/g, ',')
+    .replace(/\s+and\s+/gi, ',')
+    .split(/[;,]/)
+    .map(function (item) {
+      return normalizeText_(item)
     })
-    .filter(Boolean)
+    .filter(function (item) {
+      return item !== ''
+    })
+}
 
+function generateLeaderKeysFromLeaderValue_(value, contactsByName) {
+  const leaderNames = parseLeaderNames_(value)
+  const keys = leaderNames
+    .map(function (name) {
+      const contact = contactsByName[normalizeText_(name).toLowerCase()]
+      return contact ? normalizeText_(contact.key).toLowerCase() : ''
+    })
+    .filter(function (key) {
+      return key !== ''
+    })
+
+  return dedupeValues_(keys).join(',')
+}
+
+function normalizeContactKey_(row) {
+  const explicitKey = normalizeText_(row.key)
+
+  if (explicitKey) {
+    return explicitKey
+  }
+
+  return slugifyContactName_(row.name)
+}
+
+function slugifyContactName_(value) {
+  return normalizeText_(value)
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+}
+
+function resolveLeaderFields_(row, contactsByKey, contactsByName) {
+  const resolvedContacts = resolveContactsForRow_(row, contactsByKey, contactsByName)
   const leaderNames = resolvedContacts
     .map(function (contact) {
       return normalizeText_(contact.name)
@@ -452,11 +696,57 @@ function resolveLeaderFields_(row, contactsByKey) {
 
   const fallbackLeader = normalizeText_(row.leader)
   const fallbackLeaderEmail = normalizeText_(row.leaderEmail)
+  const fallbackLeaderKeys = normalizeText_(row.leaderKeys)
 
   return Object.assign({}, row, {
     leader: leaderNames.length ? formatDisplayNames_(leaderNames) : fallbackLeader,
     leaderEmail: leaderEmails.length ? leaderEmails.join('; ') : fallbackLeaderEmail,
+    leaderKeys: resolvedContacts.length
+      ? resolvedContacts
+          .map(function (contact) {
+            return normalizeText_(contact.key).toLowerCase()
+          })
+          .join(',')
+      : fallbackLeaderKeys,
   })
+}
+
+function resolveContactsForRow_(row, contactsByKey, contactsByName) {
+  const contactsFromNames = parseLeaderNames_(row.leader)
+    .map(function (name) {
+      return contactsByName[normalizeText_(name).toLowerCase()]
+    })
+    .filter(Boolean)
+
+  if (contactsFromNames.length) {
+    return dedupeContacts_(contactsFromNames)
+  }
+
+  const contactsFromKeys = parseLeaderKeys_(row.leaderKeys)
+    .map(function (key) {
+      return contactsByKey[key]
+    })
+    .filter(Boolean)
+
+  return dedupeContacts_(contactsFromKeys)
+}
+
+function dedupeContacts_(contacts) {
+  const seen = {}
+  const deduped = []
+
+  contacts.forEach(function (contact) {
+    const key = normalizeText_(contact.key).toLowerCase()
+
+    if (!key || seen[key]) {
+      return
+    }
+
+    seen[key] = true
+    deduped.push(contact)
+  })
+
+  return deduped
 }
 
 function dedupeValues_(values) {
@@ -663,16 +953,21 @@ function isHeaderRowEmpty_(headers) {
   })
 }
 
+function migrateCareGroupRow_(row, existingHeaders) {
+  const record = buildRowRecord_(row, existingHeaders)
+  const hasWhenColumn = Object.prototype.hasOwnProperty.call(record, 'when') && normalizeText_(record.when) !== ''
+
+  return [
+    normalizeText_(record.name),
+    normalizeText_(record.leader),
+    hasWhenColumn ? normalizeText_(record.when) : normalizeText_(record.meets),
+    hasWhenColumn ? normalizeText_(record.meets) : normalizeText_(record.location),
+    normalizeText_(record.leaderKeys || record.leaderKey),
+  ]
+}
+
 function migrateRow_(row, existingHeaders, targetHeaders, aliases) {
-  const record = {}
-
-  existingHeaders.forEach(function (header, index) {
-    const normalizedHeader = normalizeText_(header)
-
-    if (normalizedHeader) {
-      record[normalizedHeader] = row[index]
-    }
-  })
+  const record = buildRowRecord_(row, existingHeaders)
 
   return targetHeaders.map(function (header) {
     const candidates = [header].concat(aliases[header] || [])
@@ -687,6 +982,20 @@ function migrateRow_(row, existingHeaders, targetHeaders, aliases) {
 
     return ''
   })
+}
+
+function buildRowRecord_(row, existingHeaders) {
+  const record = {}
+
+  existingHeaders.forEach(function (header, index) {
+    const normalizedHeader = normalizeText_(header)
+
+    if (normalizedHeader) {
+      record[normalizedHeader] = row[index]
+    }
+  })
+
+  return record
 }
 
 function writeHeadersAndRows_(sheet, headers, rows) {

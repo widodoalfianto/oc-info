@@ -48,6 +48,11 @@ async function testContentEndpoint() {
     assert(typeof group.name === 'string' && group.name.trim(), 'A care group is missing name')
     assert(typeof group.leader === 'string' && group.leader.trim(), 'A care group is missing leader')
     assert(typeof group.meets === 'string' && group.meets.trim(), 'A care group is missing meets')
+    assert(
+      (typeof group.when === 'string' && group.when.trim()) ||
+        (typeof group.location === 'string' && group.location.trim()),
+      'A care group is missing location details'
+    )
   }
 
   console.log(`OK content endpoint returned ${payload.ministryTeams.length} ministry teams and ${payload.careGroups.length} care groups`)

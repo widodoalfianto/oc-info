@@ -1,17 +1,13 @@
 export interface MinistryTeam {
   name: string
   leader: string
-  leaderEmail?: string
-  schedule?: string
-  location?: string
 }
 
 export interface CareGroup {
   name: string
   leader: string
-  leaderEmail?: string
   meets: string
-  location?: string
+  location: string
 }
 
 export const fallbackMinistryTeams: MinistryTeam[] = [
