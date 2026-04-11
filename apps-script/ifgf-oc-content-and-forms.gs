@@ -64,7 +64,7 @@ const SEED_DATA = {
   ministryTeams: [
     { name: 'Multimedia', leader: 'Ari Adidarma' },
     { name: 'Sound', leader: 'Sangghara Kusumo' },
-    { name: 'Worship', leader: 'Amadea Margo & Alfianto Widodo' },
+    { name: 'Worship', leader: 'Amadea Margo' },
     { name: 'Hospitality', leader: 'Diana Taslim' },
     { name: 'Events & Social Media', leader: 'Kimberly Lukman' },
     { name: 'Youth', leader: 'Fira Soeharsono' },
